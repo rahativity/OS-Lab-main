@@ -1,0 +1,143 @@
+\documentclass{article}
+
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{lmodern}
+\usepackage{geometry}
+
+\geometry{margin=1in}
+
+% =========================================================
+% Terminal colors (Light Grey Theme)
+% =========================================================
+\definecolor{terminalbg}{RGB}{246,248,250}
+\definecolor{terminalbar}{RGB}{229,231,235}
+\definecolor{terminalborder}{RGB}{209,213,219}
+\definecolor{terminaltext}{RGB}{31,41,55}
+\definecolor{promptcolor}{RGB}{22,101,52}
+\definecolor{commandcolor}{RGB}{17,24,39}
+\definecolor{outputcolor}{RGB}{55,65,81}
+
+% =========================================================
+% Terminal Window
+% =========================================================
+\newcommand{\terminalwindow}[1]{%
+
+\begin{center}
+
+\begin{tikzpicture}
+
+% ---------------------------------------------------------
+% Dimensions
+% ---------------------------------------------------------
+\def\terminalwidth{0.95\textwidth}
+\def\terminalheight{7cm}
+\def\titleheight{0.65cm}
+
+% ---------------------------------------------------------
+% Window background and clipped title bar
+% ---------------------------------------------------------
+\begin{scope}
+  \clip[rounded corners=6pt] (0,0) rectangle (\terminalwidth,-\terminalheight);
+  \fill[terminalbg] (0,0) rectangle (\terminalwidth,-\terminalheight);
+  \fill[terminalbar] (0,0) rectangle (\terminalwidth,-\titleheight);
+  \draw[terminalborder, line width=0.5pt] (0,-\titleheight) -- (\terminalwidth,-\titleheight);
+\end{scope}
+
+% Continuous outer border (eliminates all edge distortion)
+\draw[terminalborder, line width=0.6pt, rounded corners=6pt] (0,0) rectangle (\terminalwidth,-\terminalheight);
+
+% ---------------------------------------------------------
+% Window buttons
+% ---------------------------------------------------------
+\fill[red!80!black]
+(0.35cm,-0.325cm)
+circle (0.09cm);
+
+\fill[yellow!80!black]
+(0.65cm,-0.325cm)
+circle (0.09cm);
+
+\fill[green!75!black]
+(0.95cm,-0.325cm)
+circle (0.09cm);
+
+% ---------------------------------------------------------
+% Terminal title
+% ---------------------------------------------------------
+\node[
+    text=gray!40!black,
+    font=\sffamily\bfseries\small
+]
+at (0.475\textwidth,-0.325cm)
+{ratul@firefly: \textasciitilde};
+
+% ---------------------------------------------------------
+% Terminal content
+% ---------------------------------------------------------
+\node[
+    anchor=north west,
+    text=terminaltext,
+    font=\ttfamily\fontsize{7.5}{9}\selectfont,
+    align=left,
+    text width=\dimexpr0.95\textwidth-0.9cm\relax,
+    inner sep=0pt
+]
+at (0.45cm,-0.95cm)
+{
+% uname
+\textcolor{promptcolor}{ratul@firefly:~\$}~
+\textcolor{commandcolor}{uname -a}
+
+\vspace{0.12cm}
+
+\textcolor{outputcolor}{Linux firefly 6.12.58 \#1-NixOS SMP PREEMPT\_DYNAMIC}
+
+\textcolor{outputcolor}{x86\_64 GNU/Linux}
+
+\vspace{0.20cm}
+
+% ps
+\textcolor{promptcolor}{ratul@firefly:~\$}~
+\textcolor{commandcolor}{ps}
+
+\textcolor{outputcolor}{\ \ \ PID TTY\ \ \ \ \ \ \ \ \ TIME CMD}
+
+\textcolor{outputcolor}{\ \ 1024 pts/0\ \ \ 00:00:00 zsh}
+
+\textcolor{outputcolor}{\ \ 1542 pts/0\ \ \ 00:00:00 ps}
+
+\vspace{0.20cm}
+
+% free
+\textcolor{promptcolor}{ratul@firefly:~\$}~
+\textcolor{commandcolor}{free -h}
+
+\textcolor{outputcolor}{\ \ \ \ \ \ \ \ \ \ \ \ \ total\ \ \ \ \ used\ \ \ \ \ free}
+
+\textcolor{outputcolor}{Mem:\ \ \ \ \ \ \ \ \ \ \ 15Gi\ \ \ \ \ \ 6.2Gi\ \ \ \ \ \ 4.1Gi}
+
+\textcolor{outputcolor}{Swap:\ \ \ \ \ \ \ \ \ \ \ 8Gi\ \ \ \ \ \ \ \ 0B\ \ \ \ \ \ \ 8Gi}
+
+\vspace{0.12cm}
+
+% Cursor / final prompt
+\textcolor{promptcolor}{ratul@firefly:~\$}~
+\textcolor{commandcolor}{\rule{0pt}{1em}\textunderscore}
+};
+
+\end{tikzpicture}
+
+\end{center}
+}
+
+% =========================================================
+% Document
+% =========================================================
+\begin{document}
+
+\section{Linux System Commands}
+
+\terminalwindow{}
+
+\end{document}

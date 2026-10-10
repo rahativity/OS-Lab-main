@@ -1,0 +1,397 @@
+\documentclass[10pt,a4paper,portrait]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,portrait,margin=0.6in,top=0.52in,bottom=0.52in]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,calc,fit,backgrounds}
+\usepackage{xcolor}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{microtype}
+
+% =========================================================
+% Palette & Styling
+% =========================================================
+\definecolor{primary}{RGB}{24, 43, 73}        % Deep clean navy
+\definecolor{secondary}{RGB}{14, 116, 144}   % Teal accent
+\definecolor{darkslate}{RGB}{30, 41, 59}     % Normal text color
+\definecolor{boxbg}{RGB}{248, 250, 252}      % Soft light box
+\definecolor{bordergray}{RGB}{226, 232, 240} % Light border
+
+% Terminal Color Scheme: Modern Light Grey Theme
+\definecolor{termbg}{RGB}{246, 248, 250}     % Light grey terminal body
+\definecolor{termbar}{RGB}{229, 231, 235}    % Medium light grey title bar
+\definecolor{termborder}{RGB}{209, 213, 219} % Crisp border line
+\definecolor{termtext}{RGB}{31, 41, 55}      % Dark charcoal text
+\definecolor{termuser}{RGB}{22, 101, 52}     % Dark green for user
+\definecolor{termhost}{RGB}{21, 128, 61}     % Green for host
+\definecolor{termpath}{RGB}{29, 78, 216}     % Blue for directory path
+\definecolor{termcmd}{RGB}{17, 24, 39}       % Bold black for commands
+\definecolor{termout}{RGB}{55, 65, 81}       % Clear dark grey for outputs
+\definecolor{termdir}{RGB}{37, 99, 235}      % Blue for directories
+\definecolor{termfile}{RGB}{31, 41, 55}      % Dark for regular files
+\definecolor{termhidden}{RGB}{107, 114, 128} % Muted grey for hidden files
+\definecolor{termsize}{RGB}{180, 83, 9}      % Amber for sizes
+\definecolor{termperm}{RGB}{79, 70, 229}     % Indigo for permissions
+
+% =========================================================
+% Section Headings
+% =========================================================
+\titleformat{\section}
+  {\color{primary}\large\bfseries\sffamily\raggedright}
+  {\thesection.}{0.5em}{}
+\titlespacing*{\section}{0pt}{7pt}{2pt}
+
+\titleformat{\subsection}
+  {\color{secondary}\normalsize\bfseries\sffamily\raggedright}
+  {\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{5pt}{2pt}
+
+% =========================================================
+% Headers and Footers
+% =========================================================
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[L]{\small\sffamily\color{darkslate} Operating Systems Lab}
+\fancyhead[R]{\small\sffamily\color{darkslate} Lab Report: Linux Navigation}
+\fancyfoot{}
+
+% First page style: no header at top, no footer at bottom
+\fancypagestyle{firstpage}{%
+  \fancyhf{}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+% =========================================================
+% Terminal Window Macro (Light Grey with Crisp Edges)
+% =========================================================
+\newcommand{\termprompt}[1][\textasciitilde]{%
+  \textbf{\textcolor{termuser}{ratul}}\textcolor{termtext}{@}\textbf{\textcolor{termhost}{firefly}}\textcolor{termtext}{:}\textbf{\textcolor{termpath}{#1}}\textcolor{termcmd}{\$}\ %
+}
+
+\newcommand{\terminalwindow}[3][\linewidth]{%
+\par\vspace{2pt}%
+{\centering
+\begin{tikzpicture}
+  % 1. Terminal text on main layer
+  \node[
+      text=termtext,
+      font=\ttfamily\fontsize{7.2}{9.2}\selectfont,
+      align=left,
+      text width=\dimexpr#1-0.95cm\relax,
+      inner xsep=6pt,
+      inner ysep=6pt,
+      anchor=north west
+  ] (body) at (0.32cm, -0.56cm) {#3};
+
+  % Coordinates
+  \coordinate (topleft) at (0, 0);
+  \coordinate (bottomright) at ($(body.south -| #1, 0) + (0, -5pt)$);
+  \coordinate (titlecenter) at ($0.5*(topleft) + 0.5*(#1, 0) + (0, -0.28cm)$);
+
+  % 2. Background and Title bar on background layer
+  \begin{scope}[on background layer]
+    % Light grey terminal body
+    \fill[termbg, rounded corners=6pt] (topleft) rectangle (bottomright);
+
+    % Title bar (clipped to match rounded top corners)
+    \begin{scope}
+      \clip[rounded corners=6pt] (topleft) rectangle (bottomright);
+      \fill[termbar] (topleft) rectangle (#1, -0.56cm);
+      \draw[termborder, line width=0.5pt] (0, -0.56cm) -- (#1, -0.56cm);
+    \end{scope}
+
+    % Continuous outer border (smooth, no distortion)
+    \draw[termborder, line width=0.6pt, rounded corners=6pt] (topleft) rectangle (bottomright);
+  \end{scope}
+
+  % 3. Window control dots
+  \fill[red!80!black] (0.36cm, -0.28cm) circle (0.07cm);
+  \fill[yellow!80!black] (0.63cm, -0.28cm) circle (0.07cm);
+  \fill[green!75!black] (0.90cm, -0.28cm) circle (0.07cm);
+
+  % 4. Centered terminal title
+  \node[
+      text=gray!40!black,
+      font=\sffamily\bfseries\fontsize{7.2}{8}\selectfont,
+      anchor=center
+  ] at (titlecenter) {#2};
+\end{tikzpicture}\par}%
+\vspace{2pt}%
+}
+
+\newcommand{\cmd}[1]{\texttt{\textbf{#1}}}
+
+\begin{document}
+\raggedbottom
+\thispagestyle{firstpage}
+
+% =========================================================
+% Title: Only Experiment Title at the Top
+% =========================================================
+\begin{center}
+  {\Large\bfseries\sffamily\color{primary} Experiment Title: Practice of Basic Linux Terminal Commands}\\[3pt]
+  {\normalsize\sffamily\textbf{Topic:} File and Directory Navigation in Linux Terminal}
+\end{center}
+\vspace{-4pt}
+
+% =========================================================
+% 1. Objective
+% =========================================================
+\section{Objective}
+To practice basic Linux navigation and file listing commands:
+\begin{itemize}[noitemsep,topsep=1pt,leftmargin=1.2em]
+  \item Check current user (\cmd{whoami}) and location (\cmd{pwd}).
+  \item Move between directories (\cmd{cd}, \cmd{cd \textasciitilde}).
+  \item List files, hidden files, and details (\cmd{ls}, \cmd{-l}, \cmd{-a}, \cmd{-lh}, \cmd{-la}).
+\end{itemize}
+
+% =========================================================
+% 2. Theoretical Background
+% =========================================================
+\section{Theoretical Background}
+Linux uses a single directory tree starting at root (\cmd{/}). Users start in home (\cmd{\textasciitilde}). Commands navigate and inspect files.
+
+\subsection{Commands Practiced in This Lab}
+\vspace{-2pt}
+\begin{table}[h!]
+\centering\footnotesize
+\renewcommand{\arraystretch}{1.06}
+\begin{tabularx}{\linewidth}{llp{5.4cm}X}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{Simple Meaning / Purpose} & \textbf{Example} \\
+\midrule
+\cmd{whoami} & \texttt{whoami} & Print current username. & \texttt{whoami} \\
+\cmd{pwd} & \texttt{pwd} & Print current directory path. & \texttt{pwd} \\
+\cmd{cd} & \texttt{cd [dir]} & Move to directory. & \texttt{cd lab\_demo} \\
+\cmd{cd \textasciitilde} & \texttt{cd \textasciitilde} & Go to home directory. & \texttt{cd \textasciitilde} \\
+\cmd{ls} & \texttt{ls} & List visible files and folders. & \texttt{ls} \\
+\cmd{ls -l} & \texttt{ls -l} & Long listing with file details. & \texttt{ls -l} \\
+\cmd{ls -a} & \texttt{ls -a} & List all files, including hidden (\texttt{.} prefix). & \texttt{ls -a} \\
+\cmd{ls -lh} & \texttt{ls -lh} & Show human-readable sizes (K, M, G). & \texttt{ls -lh} \\
+\cmd{ls -la} & \texttt{ls -la} & Show all files with full details. & \texttt{ls -la} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\vspace{-6pt}
+
+\subsection{Understanding File Details (\texttt{ls -l})}
+Running \cmd{ls -l} shows six key fields for each file:
+\vspace{-2pt}
+\begin{table}[h!]
+\centering\footnotesize
+\renewcommand{\arraystretch}{1.06}
+\begin{tabularx}{\linewidth}{p{3.2cm}X}
+\toprule
+\textbf{Field} & \textbf{Simple Explanation} \\
+\midrule
+\textbf{1. File Type \& Permissions} & Type (\texttt{-} file, \texttt{d} folder) and access rights (\texttt{rwx}) for owner, group, others. \\
+\textbf{2. Links} & Number of hard links. \\
+\textbf{3. Owner \& Group} & User and group that own the file. \\
+\textbf{4. File Size} & Size in bytes (or KB/MB with \cmd{-h}). \\
+\textbf{5. Date \& Time} & Last modification timestamp. \\
+\textbf{6. File Name} & Name of file or folder. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\vspace{-6pt}
+
+% =========================================================
+% 3. Equipment / Software Requirements
+% =========================================================
+\section{Equipment / Software Requirements}
+\vspace{-2pt}
+\begin{table}[h!]
+\centering\footnotesize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\linewidth}{lXlX}
+\toprule
+\textbf{Item} & \textbf{Details} & \textbf{Item} & \textbf{Details} \\
+\midrule
+\textbf{Operating System} & Linux (Ubuntu 24.04 LTS) & \textbf{Host Machine} & \texttt{firefly} \\
+\textbf{User Account} & \texttt{ratul} & \textbf{Command Shell} & GNU Bash 5.2 / Zsh \\
+\textbf{Terminal Emulator} & Linux Terminal (Kitty / Ghostty) & \textbf{Core Tools} & GNU Coreutils (\texttt{ls}, \texttt{pwd}, \texttt{whoami}) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =========================================================
+% 4. Procedure / Steps
+% =========================================================
+\section{Procedure / Steps}
+Steps followed in this experiment:
+\begin{enumerate}[noitemsep,topsep=1pt,leftmargin=1.4em]
+  \item Check current user (\cmd{whoami}) and directory path (\cmd{pwd}).
+  \item List home directory contents (\cmd{ls}).
+  \item Move into demo folder (\cmd{cd lab\_demo}) and verify with \cmd{pwd}.
+  \item List normal files (\cmd{ls}) and hidden files (\cmd{ls -a}).
+  \item Inspect file details in bytes (\cmd{ls -l}) and readable units (\cmd{ls -lh}).
+  \item List all files with full attributes (\cmd{ls -la}).
+  \item Return to home directory (\cmd{cd \textasciitilde}).
+\end{enumerate}
+
+\newpage
+
+% =========================================================
+% 5. Result / Output Demonstration (Session 1)
+% =========================================================
+\section{Result / Output Demonstration}
+All commands were executed in the terminal under user \texttt{ratul} on machine \texttt{firefly}.
+
+\subsection{Session 1: Finding Our Location, Moving Folders, and Listing Files}
+
+\terminalwindow{ratul@firefly: \textasciitilde\ \textemdash\ bash}{
+% Command 1: whoami
+\termprompt[\textasciitilde]\textbf{\textcolor{termcmd}{whoami}}
+
+\textcolor{termout}{ratul}
+
+\vspace{0.06cm}
+% Command 2: pwd
+\termprompt[\textasciitilde]\textbf{\textcolor{termcmd}{pwd}}
+
+\textcolor{termout}{/home/ratul}
+
+\vspace{0.06cm}
+% Command 3: ls in home
+\termprompt[\textasciitilde]\textbf{\textcolor{termcmd}{ls}}
+
+\textcolor{termdir}{\textbf{Desktop}}\ \ \ \ \textcolor{termdir}{\textbf{Documents}}\ \ \ \ \textcolor{termdir}{\textbf{Downloads}}\ \ \ \ \textcolor{termdir}{\textbf{lab\_demo}}\ \ \ \ \textcolor{termdir}{\textbf{Music}}\ \ \ \ \textcolor{termdir}{\textbf{Pictures}}\ \ \ \ \textcolor{termdir}{\textbf{Videos}}
+
+\vspace{0.06cm}
+% Command 4: cd lab_demo
+\termprompt[\textasciitilde]\textbf{\textcolor{termcmd}{cd lab\_demo}}
+
+\vspace{0.08cm}
+% Command 5: pwd inside demo
+\termprompt[\textasciitilde/lab\_demo]\textbf{\textcolor{termcmd}{pwd}}
+
+\textcolor{termout}{/home/ratul/lab\_demo}
+
+\vspace{0.06cm}
+% Command 6: ls inside demo
+\termprompt[\textasciitilde/lab\_demo]\textbf{\textcolor{termcmd}{ls}}
+
+\textcolor{termdir}{\textbf{backups}}\ \ \ \ \textcolor{termfile}{data.csv}\ \ \ \ \textcolor{termfile}{notes.txt}\ \ \ \ \textcolor{termfile}{report.pdf}\ \ \ \ \textcolor{termdir}{\textbf{scripts}}
+
+\vspace{0.06cm}
+% Command 7: ls -a
+\termprompt[\textasciitilde/lab\_demo]\textbf{\textcolor{termcmd}{ls -a}}
+
+\textcolor{termhidden}{\textbf{.}}\ \ \ \ \textcolor{termhidden}{\textbf{..}}\ \ \ \ \textcolor{termhidden}{.lab\_profile}\ \ \ \ \textcolor{termhidden}{.secret.key}\ \ \ \ \textcolor{termdir}{\textbf{backups}}\ \ \ \ \textcolor{termfile}{data.csv}\ \ \ \ \textcolor{termfile}{notes.txt}\ \ \ \ \textcolor{termfile}{report.pdf}\ \ \ \ \textcolor{termdir}{\textbf{scripts}}
+
+\vspace{0.10cm}
+% Active cursor
+\termprompt[\textasciitilde/lab\_demo]\textbf{\textcolor{termcmd}{\rule{0pt}{0.9em}\textunderscore}}
+}
+
+\vspace{2pt}\noindent\textbf{Explanation of Session 1 Results:}\par\vspace{1pt}
+\begin{itemize}[noitemsep,topsep=1pt,leftmargin=1.2em]
+  \item \cmd{whoami} and \cmd{pwd}: Identified user \texttt{ratul} at \texttt{/home/ratul}.
+  \item \cmd{cd lab\_demo}: Moved into folder; prompt updated to \texttt{\textasciitilde/lab\_demo}.
+  \item \cmd{ls} vs \cmd{ls -a}: \cmd{ls} shows visible files; \cmd{-a} reveals hidden files (\texttt{.lab\_profile}, \texttt{.secret.key}) and directory links (\texttt{.}, \texttt{..}).
+\end{itemize}
+
+% =========================================================
+% 5. Result / Output Demonstration (Session 2)
+% =========================================================
+\subsection{Session 2: Inspecting File Details, Easy Sizes, and Returning Home}
+
+\terminalwindow{ratul@firefly: \textasciitilde/lab\_demo\ \textemdash\ bash}{
+% Command 8: ls -l
+\termprompt[\textasciitilde/lab\_demo]\textbf{\textcolor{termcmd}{ls -l}}
+
+\textcolor{termout}{total 23568}
+
+\textcolor{termperm}{drwxr-xr-x}\ 2\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ \ \ \ 4096\ Oct\ \ 8\ 10:15\ \textcolor{termdir}{\textbf{backups}}
+
+\textcolor{termperm}{-rw-r--r--}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ 14680064\ Oct\ \ 8\ 10:20\ \textcolor{termfile}{data.csv}
+
+\textcolor{termperm}{-rw-r--r--}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ \ \ \ 1433\ Oct\ \ 8\ 10:22\ \textcolor{termfile}{notes.txt}
+
+\textcolor{termperm}{-rw-r--r--}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ 262144\ Oct\ \ 8\ 10:25\ \textcolor{termfile}{report.pdf}
+
+\textcolor{termperm}{drwxr-xr-x}\ 2\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ \ \ \ 4096\ Oct\ \ 8\ 10:18\ \textcolor{termdir}{\textbf{scripts}}
+
+\vspace{0.06cm}
+% Command 9: ls -lh
+\termprompt[\textasciitilde/lab\_demo]\textbf{\textcolor{termcmd}{ls -lh}}
+
+\textcolor{termout}{total 24M}
+
+\textcolor{termperm}{drwxr-xr-x}\ 2\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \textcolor{termsize}{\textbf{4.0K}}\ Oct\ \ 8\ 10:15\ \textcolor{termdir}{\textbf{backups}}
+
+\textcolor{termperm}{-rw-r--r--}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \textcolor{termsize}{\textbf{\ 14M}}\ Oct\ \ 8\ 10:20\ \textcolor{termfile}{data.csv}
+
+\textcolor{termperm}{-rw-r--r--}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \textcolor{termsize}{\textbf{1.4K}}\ Oct\ \ 8\ 10:22\ \textcolor{termfile}{notes.txt}
+
+\textcolor{termperm}{-rw-r--r--}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \textcolor{termsize}{\textbf{256K}}\ Oct\ \ 8\ 10:25\ \textcolor{termfile}{report.pdf}
+
+\textcolor{termperm}{drwxr-xr-x}\ 2\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \textcolor{termsize}{\textbf{4.0K}}\ Oct\ \ 8\ 10:18\ \textcolor{termdir}{\textbf{scripts}}
+
+\vspace{0.06cm}
+% Command 10: ls -la
+\termprompt[\textasciitilde/lab\_demo]\textbf{\textcolor{termcmd}{ls -la}}
+
+\textcolor{termout}{total 23580}
+
+\textcolor{termperm}{drwxr-xr-x}\ 4\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ \ \ \ 4096\ Oct\ \ 8\ 10:28\ \textcolor{termhidden}{\textbf{.}}
+
+\textcolor{termperm}{drwx------}\ 9\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ \ \ \ 4096\ Oct\ \ 8\ 09:50\ \textcolor{termhidden}{\textbf{..}}
+
+\textcolor{termperm}{-rw-r--r--}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ \ \ \ \ 342\ Oct\ \ 8\ 10:12\ \textcolor{termhidden}{.lab\_profile}
+
+\textcolor{termperm}{-rw-------}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ \ \ \ \ \ 64\ Oct\ \ 8\ 10:14\ \textcolor{termhidden}{.secret.key}
+
+\textcolor{termperm}{drwxr-xr-x}\ 2\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ \ \ \ 4096\ Oct\ \ 8\ 10:15\ \textcolor{termdir}{\textbf{backups}}
+
+\textcolor{termperm}{-rw-r--r--}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ 14680064\ Oct\ \ 8\ 10:20\ \textcolor{termfile}{data.csv}
+
+\textcolor{termperm}{-rw-r--r--}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ \ \ \ 1433\ Oct\ \ 8\ 10:22\ \textcolor{termfile}{notes.txt}
+
+\textcolor{termperm}{-rw-r--r--}\ 1\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ 262144\ Oct\ \ 8\ 10:25\ \textcolor{termfile}{report.pdf}
+
+\textcolor{termperm}{drwxr-xr-x}\ 2\ \textcolor{termuser}{ratul}\ \textcolor{termhost}{users}\ \ \ \ \ \ \ 4096\ Oct\ \ 8\ 10:18\ \textcolor{termdir}{\textbf{scripts}}
+
+\vspace{0.06cm}
+% Command 11: cd ~
+\termprompt[\textasciitilde/lab\_demo]\textbf{\textcolor{termcmd}{cd \textasciitilde}}
+
+\vspace{0.08cm}
+% Command 12: pwd
+\termprompt[\textasciitilde]\textbf{\textcolor{termcmd}{pwd}}
+
+\textcolor{termout}{/home/ratul}
+
+\vspace{0.10cm}
+% Final prompt
+\termprompt[\textasciitilde]\textbf{\textcolor{termcmd}{\rule{0pt}{0.9em}\textunderscore}}
+}
+
+\vspace{2pt}\noindent\textbf{Explanation of Session 2 Results:}\par\vspace{1pt}
+\begin{itemize}[noitemsep,topsep=1pt,leftmargin=1.2em]
+  \item \cmd{ls -l} vs \cmd{ls -lh}: \cmd{-l} shows raw bytes; \cmd{-lh} converts to human-readable units (\texttt{14M}).
+  \item \cmd{ls -la}: Shows full details, including permissions on hidden files (\texttt{.secret.key}).
+  \item \cmd{cd \textasciitilde}: Returned to home directory (\texttt{/home/ratul}).
+\end{itemize}
+
+% =========================================================
+% 7. Conclusion
+% =========================================================
+\section{Conclusion}
+Key takeaways from this lab:
+\begin{enumerate}[noitemsep,topsep=1pt,leftmargin=1.4em]
+  \item Navigated directories using \cmd{pwd}, \cmd{cd}, and \cmd{cd \textasciitilde}.
+  \item Generated standard, hidden, and detailed file listings using \cmd{ls} options.
+  \item Identified file permissions, ownership, sizes, and timestamps.
+\end{enumerate}
+
+\end{document}
